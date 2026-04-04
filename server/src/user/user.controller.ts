@@ -52,31 +52,53 @@ export class UserController {
     return this.userService.findOne(id);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get('/company/:id')
   findOneCompany(@Param('id') id: string) {
     return this.userService.findOneCompany(id);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateUserDto: UpdateUserDto,
+    @Req() req: any,
+  ) {
+    if (!req?.user || req.user.role !== 'admin') {
+      throw new BadRequestException('Access Denied');
+    }
     return this.userService.update(id, updateUserDto);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Patch('/company/:id')
   updateCompany(
     @Param('id') id: string,
     @Body() updateCompanyDto: UpdateCompanyDto,
+    @Req() req: any,
   ) {
+    if (!req?.user || req.user.role !== 'admin') {
+      throw new BadRequestException('Access Denied');
+    }
     return this.userService.updateCompany(id, updateCompanyDto);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Delete(':id')
-  remove(@Param('id') id: string) {
+  remove(@Param('id') id: string, @Req() req: any) {
+    if (!req?.user || req.user.role !== 'admin') {
+      throw new BadRequestException('Access Denied');
+    }
     return this.userService.remove(id);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Delete('/company/:id')
-  removeCompany(@Param('id') id: string) {
+  removeCompany(@Param('id') id: string, @Req() req: any) {
+    if (!req?.user || req.user.role !== 'admin') {
+      throw new BadRequestException('Access Denied');
+    }
     return this.userService.removeCompany(id);
   }
 }
