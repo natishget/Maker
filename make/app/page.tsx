@@ -14,6 +14,55 @@ import Image from "next/image";
 import Loading from "@/public/loginIcons/loading.png";
 
 import Navigation from "@/components/navigation";
+import { z } from "zod";
+import { useForm, type UseFormRegister } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  calculatorSchema,
+  customerDetailsSchema,
+} from "@/lib/validationSchema";
+
+type CalculatorFormData = z.infer<typeof calculatorSchema>;
+
+type CalculationResult = {
+  resultPaper?: number;
+  TotalPaperRims: number;
+  CoverPageResult?: number;
+  TotalCoverResult?: number;
+  paperCost: number;
+  coverCostTotal?: number;
+  TotalPlate: number;
+  TotalPlateCost: number;
+  PerfectBindingTotalCost?: number;
+  OverAllCostAmount: number;
+  ProfitMarginAmount: number;
+  TotalCost: number;
+  singleItemCost: number;
+};
+
+const defaultValues: CalculatorFormData = {
+  calculationType: "1",
+  pages: "",
+  quantity: "",
+  paperSize: "A2",
+  rim: "80",
+  coverRim: "250",
+  printType: "2",
+  cost: "",
+  coverCost: "",
+  laminationCost: "",
+  perfectBindingCost: "",
+  wasteFactor: "",
+  plateCost: "",
+  overAllCost: "",
+  profitMargin: "",
+  colorCover: "1",
+  colorInside: "1",
+  otherOne: "",
+  otherTwo: "",
+  customerName: "",
+  customerPhone: "",
+};
 
 export default function Home() {
   const router = useRouter();
@@ -22,37 +71,33 @@ export default function Home() {
     (state: RootState) => state.api,
   );
   const cartItems = useSelector((state: RootState) => state.cart.items);
-  const [form, setForm] = useState({
-    pages: "",
-    quantity: "",
-    paperSize: "1",
-    rim: "",
-    coverRim: "",
-    printType: "2",
-    cost: "",
-    coverCost: "",
-    laminationCost: "",
-    perfectBindingCost: "",
-    wasteFactor: "",
-    plateCost: "",
-    overAllCost: "",
-    profitMargin: "",
-    colorCover: "",
-    colorInside: "",
-    otherOne: "",
-    otherTwo: "",
-    customerName: "",
-    customerPhone: "",
+
+  const [result, setResult] = useState<CalculationResult | null>(null);
+  const [submittedData, setSubmittedData] = useState<CalculatorFormData | null>(
+    null,
+  );
+
+  const {
+    register,
+    handleSubmit,
+    watch,
+    getValues,
+    setError,
+    clearErrors,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<CalculatorFormData>({
+    resolver: zodResolver(calculatorSchema),
+    mode: "onTouched",
+    reValidateMode: "onChange",
+    defaultValues,
   });
-  const [calculationType, setCalculationType] = useState(1);
-  const [result, setResult] = useState<any>(null);
-  const [error, setError] = useState("");
+
+  const calculationType = watch("calculationType");
 
   const getCompanyInfo = async () => {
-    console.log("Attempting to fetch company data for user:", user);
     try {
-      const response = await dispatch(getCompanyDataAsync()).unwrap();
-      console.log("Company Info:", response);
+      await dispatch(getCompanyDataAsync()).unwrap();
     } catch (error) {
       console.error("Error fetching company info:", error);
     }
@@ -70,51 +115,65 @@ export default function Home() {
     }
   }, [initialized, user?.id, company]);
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
-  ) => {
-    setForm({
-      ...form,
-      [e.target.id]: e.target.value,
-    });
-  };
+  const calculateBook = (data: CalculatorFormData) => {
+    let P = Number(data.pages);
+    const Q = Number(data.quantity);
+    const n =
+      data.paperSize === "A2"
+        ? 1
+        : data.paperSize === "A3"
+          ? 2
+          : data.paperSize === "A4"
+            ? 3
+            : data.paperSize === "A5"
+              ? 4
+              : data.paperSize === "A6"
+                ? 5
+                : 6;
+    const R =
+      data.rim === "300"
+        ? 100
+        : data.rim === "250"
+          ? 100
+          : data.rim === "150"
+            ? 250
+            : data.rim === "100"
+              ? 250
+              : data.rim === "80"
+                ? 500
+                : 500;
+    const CoverRim =
+      data.coverRim === "300"
+        ? 100
+        : data.coverRim === "250"
+          ? 100
+          : data.coverRim === "150"
+            ? 250
+            : data.coverRim === "100"
+              ? 250
+              : data.coverRim === "80"
+                ? 500
+                : data.coverRim === "60"
+                  ? 500
+                  : 0;
 
-  const handleChangeOfType = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
-  ) => {
-    setCalculationType(Number(e.target.value));
-  };
-
-  const calculateBook = () => {
-    let P = Number(form.pages);
-    const Q = Number(form.quantity);
-    const n = Number(form.paperSize);
-    const R = Number(form.rim);
-    const CoverRim = Number(form.coverRim);
-    const printType = Number(form.printType);
-    const cost = Number(form.cost);
-    const CoverCost = Number(form.coverCost);
-    const LaminationCost = Number(form.laminationCost);
-    const PerfectBindingCost = Number(form.perfectBindingCost);
-    let wasteFactor = Number(form.wasteFactor);
-    let PlateCost = Number(form.plateCost);
-    const OverAllCost = Number(form.overAllCost);
-    const ProfitMargin = Number(form.profitMargin);
-    const colorCover = Number(form.colorCover);
-    const colorInside = Number(form.colorInside);
-    const OtherOne = Number(form.otherOne);
-    const OtherTwo = Number(form.otherTwo);
-
-    if (!P || !Q || !n || R <= 0) {
-      setError("Please enter valid values");
-      return;
-    }
-
-    setError("");
+    const printType = Number(data.printType);
+    const cost = Number(data.cost);
+    const CoverCost = Number(data.coverCost);
+    const LaminationCost = Number(data.laminationCost);
+    const PerfectBindingCost = Number(data.perfectBindingCost);
+    let wasteFactor = Number(data.wasteFactor);
+    let PlateCost = Number(data.plateCost);
+    const OverAllCost = Number(data.overAllCost);
+    const ProfitMargin = Number(data.profitMargin);
+    const colorCover = Number(data.colorCover);
+    const colorInside = Number(data.colorInside);
+    const OtherOne = Number(data.otherOne);
+    const OtherTwo = Number(data.otherTwo);
 
     if (printType === 1) {
-      P = P * 2;
-      PlateCost = PlateCost / 2;
+      P *= 2;
+      PlateCost /= 2;
     }
 
     wasteFactor = wasteFactor / 100 + 1;
@@ -124,14 +183,11 @@ export default function Home() {
     const TotalPaperRims = resultPaper * wasteFactor;
 
     const CoverPageResult =
-      CoverRim !== 0 ? Q / (CoverRim * (Math.pow(2, n) / 2)) : 0;
+      CoverRim > 0 && CoverCost > 0 ? Q / (CoverRim * (Math.pow(2, n) / 2)) : 0;
 
     const TotalCoverResult = CoverPageResult * wasteFactor;
-
     const TotalPlate = (P / Math.pow(2, n - 1)) * colorInside + colorCover;
-
     const TotalPlateCost = TotalPlate * PlateCost;
-
     const LaminationTotalCost = LaminationCost * Q;
     const PerfectBindingTotalCost = PerfectBindingCost * Q;
 
@@ -148,9 +204,7 @@ export default function Home() {
     const OverAllCostAmount = (OverAllCost / 100) * CostBefore;
     const ProfitMarginAmount =
       (ProfitMargin / 100) * (CostBefore + OverAllCostAmount);
-
     const TotalCost = CostBefore + OverAllCostAmount + ProfitMarginAmount;
-    const singleItemCost = TotalCost / Q;
 
     setResult({
       resultPaper,
@@ -165,30 +219,35 @@ export default function Home() {
       OverAllCostAmount,
       ProfitMarginAmount,
       TotalCost,
-      singleItemCost,
+      singleItemCost: TotalCost / Q,
     });
+    setSubmittedData(data);
   };
 
-  const calculateBrochurs = () => {
-    const Q = Number(form.quantity);
-    const n = Number(form.paperSize);
-    const R = Number(form.rim);
-    const cost = Number(form.cost);
-    const LaminationCost = Number(form.laminationCost);
-    let wasteFactor = Number(form.wasteFactor);
-    let PlateCost = Number(form.plateCost);
-    const OverAllCost = Number(form.overAllCost);
-    const ProfitMargin = Number(form.profitMargin);
-    const colorInside = Number(form.colorInside);
-    const OtherOne = Number(form.otherOne);
-    const OtherTwo = Number(form.otherTwo);
-
-    if (!Q || !n || R <= 0) {
-      setError("Please enter valid values");
-      return;
-    }
-
-    setError("");
+  const calculateBrochurs = (data: CalculatorFormData) => {
+    const Q = Number(data.quantity);
+    const n =
+      data.paperSize === "A2"
+        ? 1
+        : data.paperSize === "A3"
+          ? 2
+          : data.paperSize === "A4"
+            ? 3
+            : data.paperSize === "A5"
+              ? 4
+              : data.paperSize === "A6"
+                ? 5
+                : 6;
+    const R = Number(data.rim);
+    const cost = Number(data.cost);
+    const LaminationCost = Number(data.laminationCost);
+    let wasteFactor = Number(data.wasteFactor);
+    const PlateCost = Number(data.plateCost);
+    const OverAllCost = Number(data.overAllCost);
+    const ProfitMargin = Number(data.profitMargin);
+    const colorInside = Number(data.colorInside);
+    const OtherOne = Number(data.otherOne);
+    const OtherTwo = Number(data.otherTwo);
 
     wasteFactor = wasteFactor / 100 + 1;
 
@@ -196,7 +255,6 @@ export default function Home() {
     const TotalPaperRims = result * wasteFactor;
     const TotalPlate = colorInside;
     const TotalPlateCost = TotalPlate * PlateCost;
-
     const LaminationTotalCost = LaminationCost * Q;
 
     let CostBefore =
@@ -208,7 +266,6 @@ export default function Home() {
     const OverAllCostAmount = (OverAllCost / 100) * CostBefore;
     const ProfitMarginAmount =
       (ProfitMargin / 100) * (CostBefore + OverAllCostAmount);
-
     const TotalCost = CostBefore + OverAllCostAmount + ProfitMarginAmount;
 
     setResult({
@@ -221,6 +278,35 @@ export default function Home() {
       TotalCost,
       singleItemCost: TotalCost / Q,
     });
+    setSubmittedData(data);
+  };
+
+  const onCalculate = (data: CalculatorFormData) => {
+    if (data.calculationType === "1") {
+      calculateBook(data);
+      return;
+    }
+
+    calculateBrochurs(data);
+  };
+
+  const validateCustomerFields = () => {
+    const currentValues = getValues();
+    const parsedCustomer = customerDetailsSchema.safeParse(currentValues);
+
+    if (!parsedCustomer.success) {
+      parsedCustomer.error.issues.forEach((issue) => {
+        const field = issue.path[0] as "customerName" | "customerPhone";
+        setError(field, {
+          type: "manual",
+          message: issue.message,
+        });
+      });
+      return null;
+    }
+
+    clearErrors(["customerName", "customerPhone"]);
+    return parsedCustomer.data;
   };
 
   const GeneratePdfData = () => {
@@ -233,14 +319,24 @@ export default function Home() {
   };
 
   const sendToTelegram = async () => {
+    if (!result || !submittedData) {
+      alert("Please calculate the item before sending it to Telegram.");
+      return;
+    }
+
+    const currentValues = validateCustomerFields();
+    if (!currentValues) {
+      return;
+    }
+
     const secondMessage = `📄 Service Request
 
-👤 Customer: ${form.customerName}
-📞 Phone: ${form.customerPhone}
+👤 Customer: ${currentValues.customerName}
+📞 Phone: ${currentValues.customerPhone}
 
-📦 Type: ${calculationType === 1 ? "Book Related" : "Brochure Related"}
-${calculationType === 1 ? `📑 Pages: ${form.pages}` : ""}
-🔢 Quantity: ${form.quantity}
+📦 Type: ${submittedData.calculationType === "1" ? "Book Related" : "Brochure Related"}
+${submittedData.calculationType === "1" ? `📑 Pages: ${submittedData.pages}` : ""}
+🔢 Quantity: ${submittedData.quantity}
 
 💰 Total Cost: *\`${result.TotalCost.toFixed(2)}\`*
 💵 Single Item Cost: *\`${result.singleItemCost.toFixed(2)}\`*
@@ -257,30 +353,30 @@ Powered By ByteForge 🚀`;
 
     const message = `📄 Service Request (staff only)👆
 
-👤 Customer: ${form.customerName}
-📞 Phone: ${form.customerPhone}
+👤 Customer: ${currentValues.customerName}
+📞 Phone: ${currentValues.customerPhone}
 
-📦 Type: ${calculationType === 1 ? "Book Related" : "Brochure Related"}
-${calculationType === 1 ? `📑 Pages: ${form.pages}` : ""}
-🔢 Quantity: ${form.quantity}
-📖 Inside paper per rim: ${form.rim}
-💰 Rim cost: ${form.cost}
+📦 Type: ${submittedData.calculationType === "1" ? "Book Related" : "Brochure Related"}
+${submittedData.calculationType === "1" ? `📑 Pages: ${submittedData.pages}` : ""}
+🔢 Quantity: ${submittedData.quantity}
+📖 Inside paper per rim: ${submittedData.rim}
+💰 Rim cost: ${submittedData.cost}
 ${
-  calculationType === 1
-    ? `📕 Cover paper per rim: ${form.coverRim}
-💰 Cover rim cost: ${form.coverCost}
-🎨 Color for inside: ${form.colorInside}
-🎨 Color for cover: ${form.colorCover}`
+  submittedData.calculationType === "1"
+    ? `📕 Cover paper per rim: ${submittedData.coverRim}
+💰 Cover rim cost: ${submittedData.coverCost}
+🎨 Color for inside: ${submittedData.colorInside}
+🎨 Color for cover: ${submittedData.colorCover}`
     : ""
 }
-📄 Print size: ${form.paperSize === "1" ? "A2" : form.paperSize === "2" ? "A3" : form.paperSize === "3" ? "A4" : form.paperSize === "4" ? "A5" : form.paperSize === "5" ? "A6" : form.paperSize === "6" ? "A7" : "Unknown"}
-🖨️ Print type: ${form.printType === "1" ? "1 Side" : "2 Side"}
-🖥️ Plate cost: ${form.plateCost}
-📑 Lamination cost: ${form.laminationCost}
-${calculationType === 1 ? `📎 Binding cost: ${form.perfectBindingCost}` : ""}
-🗑️ Waste factor: ${form.wasteFactor}%
-📈 Overall cost: ${form.overAllCost}%
-📊 Profit margin: ${form.profitMargin}%
+📄 Print size: ${submittedData.paperSize}
+🖨️ Print type: ${submittedData.printType === "1" ? "1 Side" : "2 Side"}
+🖥️ Plate cost: ${submittedData.plateCost}
+📑 Lamination cost: ${submittedData.laminationCost}
+${submittedData.calculationType === "1" ? `📎 Binding cost: ${submittedData.perfectBindingCost}` : ""}
+🗑️ Waste factor: ${submittedData.wasteFactor}%
+📈 Overall cost: ${submittedData.overAllCost}%
+📊 Profit margin: ${submittedData.profitMargin}%
 
 
 💰 Total Cost: *\`${result.TotalCost.toFixed(2)}\`*
@@ -314,7 +410,7 @@ Powered By ByteForge 🚀`;
       );
       const data = await response.json();
       if (!data.ok) {
-        throw new Error(data.description || "Failed to send firstmessage");
+        throw new Error(data.description || "Failed to send first message");
       }
 
       const response2 = await fetch(
@@ -333,7 +429,7 @@ Powered By ByteForge 🚀`;
       );
       const data2 = await response2.json();
       if (!data2.ok) {
-        throw new Error(data2.description || "Failed to send Second message");
+        throw new Error(data2.description || "Failed to send second message");
       }
       alert("Message sent successfully!");
     } catch (error) {
@@ -342,48 +438,30 @@ Powered By ByteForge 🚀`;
   };
 
   const emptyForm = () => {
-    setForm({
-      pages: "",
-      quantity: "",
-      paperSize: "1",
-      rim: "",
-      coverRim: "",
-      printType: "2",
-      cost: "",
-      coverCost: "",
-      laminationCost: "",
-      perfectBindingCost: "",
-      wasteFactor: "",
-      plateCost: "",
-      overAllCost: "",
-      profitMargin: "",
-      colorCover: "",
-      colorInside: "",
-      otherOne: "",
-      otherTwo: "",
-      customerName: "",
-      customerPhone: "",
-    });
+    reset(defaultValues);
     setResult(null);
+    setSubmittedData(null);
+    clearErrors();
   };
 
   const addItemToCart = () => {
-    if (!form.customerName || !form.customerPhone)
-      return alert(
-        "Please enter customer name and phone number before adding to cart.",
-      );
+    if (!result || !submittedData) {
+      alert("Please calculate the item before adding it to the cart.");
+      return;
+    }
 
-    if (!result) {
+    const currentValues = validateCustomerFields();
+    if (!currentValues) {
       return;
     }
 
     const item: CartItem = {
       id: Date.now().toString(),
-      customerName: form.customerName,
-      customerPhone: form.customerPhone,
-      product: calculationType === 1 ? "Book" : "Brochure",
-      quantity: Number(form.quantity),
-      description: `Pages: ${form.pages}, Paper Size: ${form.paperSize}, Print Type: ${form.printType}, Color Inside: ${form.colorInside}, Color Cover: ${form.colorCover}`,
+      customerName: currentValues.customerName,
+      customerPhone: currentValues.customerPhone,
+      product: submittedData.calculationType === "1" ? "Book" : "Brochure",
+      quantity: Number(submittedData.quantity),
+      description: `Pages: ${submittedData.pages}, Paper Size: ${submittedData.paperSize}, Print Type: ${submittedData.printType}, Color Inside: ${submittedData.colorInside}, Color Cover: ${submittedData.colorCover}`,
       totalCost: result.TotalCost.toFixed(2),
       singleItemCost: result.singleItemCost.toFixed(2),
       salesAgent: user?.name || "",
@@ -403,48 +481,50 @@ Powered By ByteForge 🚀`;
       <div className="bg-gray-100 min-h-screen w-full overflow-y-hidden overflow-x-hidden">
         <Navigation />
         <div className=" flex  justify-center p-6 text-black justify-center bg-gradient-to-br from-[rgb(15,12,41)] from-0% via-[rgb(48,43,99)] via-50% to-[rgb(36,36,62)] to-100% overflow-y-hidden">
-          <div className="bg-white p-6 rounded-xl shadow-lg w-full max-w-2xl space-y-4 overflow-y-auto no-scrollbar">
+          <form
+            onSubmit={handleSubmit(onCalculate)}
+            noValidate
+            className="bg-white p-6 rounded-xl shadow-lg w-full max-w-2xl space-y-4 overflow-y-auto no-scrollbar"
+          >
             <h2 className="text-xl font-bold text-center">
-              {calculationType === 1
+              {calculationType === "1"
                 ? "Book Calculator"
                 : "Brochure Calculator"}
             </h2>
 
-            {error && <div className="text-red-500 text-sm">{error}</div>}
-
-            {/* Inputs */}
-
             <Select
               id="calculationType"
               label="Calculation For"
-              value={calculationType}
-              onChange={handleChangeOfType}
+              register={register}
+              error={errors.calculationType?.message}
               options={[
-                { value: 1, label: "Book" },
-                { value: 2, label: "Brochures" },
+                { value: "1", label: "Book" },
+                { value: "2", label: "Brochures" },
               ]}
             />
-            <div className={calculationType === 1 ? "" : "hidden"}>
+
+            <div className={calculationType === "1" ? "" : "hidden"}>
               <Input
                 id="pages"
                 label="Pages without cover"
-                value={form.pages}
-                onChange={handleChange}
+                register={register}
+                error={errors.pages?.message}
               />
             </div>
+
             <Input
               id="quantity"
               label="Quantity"
-              value={form.quantity}
-              onChange={handleChange}
+              register={register}
+              error={errors.quantity?.message}
             />
 
-            <div className={calculationType === 1 ? "" : "hidden"}>
+            <div className={calculationType === "1" ? "" : "hidden"}>
               <Select
                 id="printType"
                 label="Print Type"
-                value={form.printType}
-                onChange={handleChange}
+                register={register}
+                error={errors.printType?.message}
                 options={[
                   { value: "1", label: "1 Side" },
                   { value: "2", label: "2 Side" },
@@ -455,75 +535,77 @@ Powered By ByteForge 🚀`;
             <Select
               id="paperSize"
               label="Paper Size (A2, A3, ..)"
-              value={form.paperSize}
-              onChange={handleChange}
+              register={register}
+              error={errors.paperSize?.message}
               options={[
-                { value: "1", label: "A2" },
-                { value: "2", label: "A3" },
-                { value: "3", label: "A4" },
-                { value: "4", label: "A5" },
-                { value: "5", label: "A6" },
-                { value: "6", label: "A7" },
+                { value: "A2", label: "A2" },
+                { value: "A3", label: "A3" },
+                { value: "A4", label: "A4" },
+                { value: "A5", label: "A5" },
+                { value: "A6", label: "A6" },
+                { value: "A7", label: "A7" },
               ]}
             />
 
             <Select
               id="rim"
               label={
-                calculationType === 1
+                calculationType === "1"
                   ? "Inner Paper Thickness (80 Gram, 100 Gram,...)"
                   : "Brochure Paper Thickness (150 Gram, 200 Gram,...)"
               }
-              value={form.rim}
-              onChange={handleChange}
+              register={register}
+              error={errors.rim?.message}
               options={[
-                { value: "100", label: "300 Gram" },
-                { value: "100", label: "250 Gram" },
-                { value: "250", label: "150 Gram" },
-                { value: "250", label: "100 Gram" },
-                { value: "500", label: "80 Gram" },
-                { value: "500", label: "60 Gram" },
+                { value: "300", label: "300 Gram" },
+                { value: "250", label: "250 Gram" },
+                { value: "150", label: "150 Gram" },
+                { value: "100", label: "100 Gram" },
+                { value: "80", label: "80 Gram" },
+                { value: "60", label: "60 Gram" },
               ]}
             />
 
             <Input
               id="cost"
               label={
-                calculationType === 1
+                calculationType === "1"
                   ? "Inner Paper Cost ($ per Rim)"
                   : "Brochure Paper Cost ($ per Rim)"
               }
-              value={form.cost}
-              onChange={handleChange}
+              register={register}
+              error={errors.cost?.message}
             />
-            <div className={calculationType === 1 ? "" : "hidden"}>
+
+            <div className={calculationType === "1" ? "" : "hidden"}>
               <Select
                 id="coverRim"
                 label="Cover Paper Thickness (150 Gram, 200 Gram,...)"
-                value={form.coverRim}
-                onChange={handleChange}
+                register={register}
+                error={errors.coverRim?.message}
                 options={[
-                  { value: "100", label: "300 Gram" },
-                  { value: "100", label: "250 Gram" },
-                  { value: "250", label: "150 Gram" },
-                  { value: "250", label: "100 Gram" },
-                  { value: "500", label: "80 Gram" },
-                  { value: "500", label: "60 Gram" },
+                  { value: "300", label: "300 Gram" },
+                  { value: "250", label: "250 Gram" },
+                  { value: "150", label: "150 Gram" },
+                  { value: "100", label: "100 Gram" },
+                  { value: "80", label: "80 Gram" },
+                  { value: "60", label: "60 Gram" },
+                  { value: "", label: "Do Not Use Cover" },
                 ]}
               />
               <Input
                 id="coverCost"
                 label="Cover Paper Cost ($ per Rim)"
-                value={form.coverCost}
-                onChange={handleChange}
+                register={register}
+                error={errors.coverCost?.message}
               />
             </div>
 
             <Select
               id="colorInside"
               label="Color for Inside Pages"
-              value={form.colorInside}
-              onChange={handleChange}
+              register={register}
+              error={errors.colorInside?.message}
               options={[
                 { value: "1", label: "One Color" },
                 { value: "2", label: "Two Color" },
@@ -532,12 +614,12 @@ Powered By ByteForge 🚀`;
               ]}
             />
 
-            <div className={calculationType === 1 ? "" : "hidden"}>
+            <div className={calculationType === "1" ? "" : "hidden"}>
               <Select
                 id="colorCover"
                 label="Color for Cover Pages"
-                value={form.colorCover}
-                onChange={handleChange}
+                register={register}
+                error={errors.colorCover?.message}
                 options={[
                   { value: "1", label: "One Color" },
                   { value: "2", label: "Two Color" },
@@ -550,85 +632,79 @@ Powered By ByteForge 🚀`;
             <Input
               id="plateCost"
               label="Plate Cost"
-              value={form.plateCost}
-              onChange={handleChange}
+              register={register}
+              error={errors.plateCost?.message}
             />
 
             <Input
               id="laminationCost"
               label="Lamination Cost"
-              value={form.laminationCost}
-              onChange={handleChange}
+              register={register}
+              error={errors.laminationCost?.message}
             />
 
-            <div className={calculationType === 1 ? "" : "hidden"}>
+            <div className={calculationType === "1" ? "" : "hidden"}>
               <Input
                 id="perfectBindingCost"
                 label="Binding Cost"
-                value={form.perfectBindingCost}
-                onChange={handleChange}
+                register={register}
+                error={errors.perfectBindingCost?.message}
               />
             </div>
 
             <Input
               id="wasteFactor"
               label="Waste Factor %"
-              value={form.wasteFactor}
-              onChange={handleChange}
+              register={register}
+              error={errors.wasteFactor?.message}
             />
 
             <Input
               id="overAllCost"
               label="Overall Cost %"
-              value={form.overAllCost}
-              onChange={handleChange}
+              register={register}
+              error={errors.overAllCost?.message}
             />
 
             <Input
               id="profitMargin"
               label="Profit Margin %"
-              value={form.profitMargin}
-              onChange={handleChange}
+              register={register}
+              error={errors.profitMargin?.message}
             />
 
             <Input
               id="otherOne"
               label="Other One (will be Directly added)"
-              value={form.otherOne}
-              onChange={handleChange}
+              register={register}
+              error={errors.otherOne?.message}
             />
 
             <Input
               id="otherTwo"
               label="Other Two (will be Directly added)"
-              value={form.otherTwo}
-              onChange={handleChange}
+              register={register}
+              error={errors.otherTwo?.message}
             />
 
             <button
-              onClick={
-                calculationType === 1 ? calculateBook : calculateBrochurs
-              }
-              className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700"
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70"
             >
-              Calculate
+              {isSubmitting ? "Calculating..." : "Calculate"}
             </button>
-
-            {/* Results */}
 
             {result && (
               <div className="space-y-1 text-sm font-semibold">
-                <div className="flex justify-evenly ">
+                <div className="flex justify-evenly">
                   <div className="border-r border-gray-400 pr-3">
                     <div className="text-blue-600">Required Rims</div>
-                    <div className={calculationType === 1 ? "" : "hidden"}>
-                      For Inside:{" "}
-                      {calculationType === 1 && result.resultPaper.toFixed(2)}
+                    <div className={calculationType === "1" ? "" : "hidden"}>
+                      For Inside: {result.resultPaper?.toFixed(2)}
                     </div>
-                    <div className={calculationType === 1 ? "" : "hidden"}>
-                      For Cover:{" "}
-                      {calculationType === 1 &&
-                        result.CoverPageResult.toFixed(2)}
+                    <div className={calculationType === "1" ? "" : "hidden"}>
+                      For Cover: {result.CoverPageResult?.toFixed(2)}
                     </div>
 
                     <div className="text-blue-600">
@@ -637,27 +713,23 @@ Powered By ByteForge 🚀`;
                     </div>
                     <div>For Inside: {result.TotalPaperRims.toFixed(2)}</div>
 
-                    <div className={calculationType === 1 ? "" : "hidden"}>
-                      For Cover:{" "}
-                      {calculationType === 1 &&
-                        result.TotalCoverResult.toFixed(2)}
+                    <div className={calculationType === "1" ? "" : "hidden"}>
+                      For Cover: {result.TotalCoverResult?.toFixed(2)}
                     </div>
 
                     <div>
                       Cost for Inside: {Number(result.paperCost.toFixed(2))}
                     </div>
-                    <div className={calculationType === 1 ? "" : "hidden"}>
-                      Cost for Cover:{" "}
-                      {calculationType === 1 &&
-                        result.coverCostTotal.toFixed(2)}
+                    <div className={calculationType === "1" ? "" : "hidden"}>
+                      Cost for Cover: {result.coverCostTotal?.toFixed(2)}
                     </div>
 
                     <div className="text-yellow-600">
                       Total Paper Cost:{" "}
                       {Number(result.paperCost.toFixed(2)) +
                         Number(
-                          calculationType === 1
-                            ? result.coverCostTotal.toFixed(2)
+                          calculationType === "1"
+                            ? (result.coverCostTotal?.toFixed(2) ?? 0)
                             : 0,
                         )}
                     </div>
@@ -670,11 +742,11 @@ Powered By ByteForge 🚀`;
                     <div>Total Plate: {result.TotalPlate.toFixed(2)}</div>
                     <div>
                       Total Plate Cost: {result.TotalPlateCost.toFixed(2)}
-                    </div>{" "}
+                    </div>
                     <br />
-                    <div className={calculationType === 1 ? "" : "hidden"}>
+                    <div className={calculationType === "1" ? "" : "hidden"}>
                       Total Binding Cost:{" "}
-                      {calculationType === 1 && result.PerfectBindingTotalCost}
+                      {result.PerfectBindingTotalCost?.toFixed(2)}
                     </div>
                   </div>
 
@@ -703,40 +775,43 @@ Powered By ByteForge 🚀`;
                   <Input
                     id="customerName"
                     label="Customer/Company Name"
-                    value={form.customerName}
+                    register={register}
+                    error={errors.customerName?.message}
                     type="text"
-                    onChange={handleChange}
                   />
                   <Input
                     id="customerPhone"
                     label="Customer/Company Phone"
-                    value={form.customerPhone}
+                    register={register}
+                    error={errors.customerPhone?.message}
                     type="text"
-                    onChange={handleChange}
                   />
                 </div>
-                <div className="flex justify-between">
+
+                <div className="flex justify-between gap-2 flex-wrap">
                   <button
+                    type="button"
                     className="bg-purple-600 text-white font-sm px-3 py-2 rounded"
                     onClick={addItemToCart}
                   >
                     Add To Cart
                   </button>
                   <button
+                    type="button"
                     className="bg-blue-600 text-white font-sm px-3 py-2 rounded"
                     onClick={sendToTelegram}
                   >
                     Send To Telegram
                   </button>
-
                   <button
+                    type="button"
                     className="bg-green-500 text-white font-sm px-3 py-2 rounded"
                     onClick={GeneratePdfData}
                   >
                     PDF
                   </button>
-
                   <button
+                    type="button"
                     className="bg-red-600 text-white font-sm px-3 py-2 rounded"
                     onClick={emptyForm}
                   >
@@ -745,11 +820,12 @@ Powered By ByteForge 🚀`;
                 </div>
               </div>
             )}
-          </div>
+          </form>
         </div>
       </div>
     );
   }
+
   return (
     <div className="w-screen h-screen flex items-center justify-center bg-gradient-to-br from-[rgb(15,12,41)] from-0% via-[rgb(48,43,99)] via-50% to-[rgb(36,36,62)] to-100%">
       <Image src={Loading} alt="Loading" className="animate-spin w-10" />
@@ -757,38 +833,59 @@ Powered By ByteForge 🚀`;
   );
 }
 
-function Input({ id, label, value, onChange, type = "number" }: any) {
+type InputProps = {
+  id: keyof CalculatorFormData;
+  label: string;
+  register: UseFormRegister<CalculatorFormData>;
+  error?: string;
+  type?: string;
+};
+
+function Input({ id, label, register, error, type = "number" }: InputProps) {
   return (
-    <div id={id}>
-      <label className="text-sm">{label}</label>
+    <div>
+      <label htmlFor={id} className="text-sm">
+        {label}
+      </label>
       <input
         id={id}
-        value={value}
-        onChange={onChange}
         type={type}
+        {...register(id)}
         className="w-full border p-2 rounded mt-1"
+        aria-invalid={Boolean(error)}
       />
+      {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
     </div>
   );
 }
 
-function Select({ id, label, value, onChange, options }: any) {
+type SelectProps = {
+  id: keyof CalculatorFormData;
+  label: string;
+  register: UseFormRegister<CalculatorFormData>;
+  error?: string;
+  options: Array<{ value: string; label: string }>;
+};
+
+function Select({ id, label, register, error, options }: SelectProps) {
   return (
-    <div id={id}>
-      <label className="text-sm">{label}</label>
+    <div>
+      <label htmlFor={id} className="text-sm">
+        {label}
+      </label>
       <select
         id={id}
-        value={value}
-        onChange={onChange}
+        {...register(id)}
         className="w-full border p-2 rounded mt-1"
+        aria-invalid={Boolean(error)}
       >
-        {/* <option value="">Select</option> */}
-        {options.map((opt: any) => (
+        {options.map((opt) => (
           <option key={`${opt.value}-${opt.label}`} value={opt.value}>
             {opt.label}
           </option>
         ))}
       </select>
+      {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
     </div>
   );
 }
