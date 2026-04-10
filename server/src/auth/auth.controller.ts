@@ -61,11 +61,14 @@ export class AuthController {
     @Body() dto: LoginUserDto,
     @Res({ passthrough: true }) res: Response,
   ) {
+    console.log('user trying to login', dto);
     const { access_token, user } = await this.authService.loginUser(dto);
 
     if (!access_token) {
       throw new BadRequestException('Failed to issue token');
     }
+
+    console.log('user after login', user);
 
     res.cookie('access_token', access_token, {
       httpOnly: true,
