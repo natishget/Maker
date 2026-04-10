@@ -181,6 +181,27 @@ export const protectedRouteAsync = createAsyncThunk<
     },
   },
 );
+
+export const logoutAsync = createAsyncThunk<
+  void,
+  void,
+  { rejectValue: string }
+>("logoutAsync", async (_, { rejectWithValue }) => {
+  try {
+    await api.post(
+      "/auth/logout",
+      {},
+      {
+        withCredentials: true,
+      },
+    );
+  } catch (error: any) {
+    return rejectWithValue(
+      error.response?.data?.message || "Failed to log out",
+    );
+  }
+});
+
 export const getCompanyDataAsync = createAsyncThunk<
   Company,
   void,
@@ -475,6 +496,22 @@ const ApiSlice = createSlice({
         state.error =
           action.payload || action.error.message || "something went wrong";
         state.initialized = true;
+      })
+
+      // logout
+      .addCase(logoutAsync.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(logoutAsync.fulfilled, (state) => {
+        state.loading = false;
+        state.user = null;
+        state.loginResponse = null;
+      })
+      .addCase(logoutAsync.rejected, (state, action) => {
+        state.loading = false;
+        state.error =
+          action.payload || action.error.message || "something went wrong";
       })
 
       // get company data
