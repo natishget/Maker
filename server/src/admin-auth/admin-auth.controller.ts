@@ -32,7 +32,7 @@ export class AdminAuthController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.adminAuthService.findOne(+id);
+    return this.adminAuthService.findOne(id);
   }
 
   @Patch(':id')
@@ -40,11 +40,11 @@ export class AdminAuthController {
     @Param('id') id: string,
     @Body() updateAdminAuthDto: UpdateAdminAuthDto,
   ) {
-    return this.adminAuthService.update(+id, updateAdminAuthDto);
+    return this.adminAuthService.update(id, updateAdminAuthDto);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.adminAuthService.remove(+id);
+    return this.adminAuthService.remove(id);
   }
 }
