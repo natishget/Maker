@@ -13,6 +13,7 @@ import { randomUUID } from 'crypto';
 import { JwtService } from '@nestjs/jwt';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AdminAuthService {
@@ -63,11 +64,12 @@ export class AdminAuthService {
 
   async create(createAdminAuthDto: CreateAdminAuthDto) {
     try {
+      const hashedPassword = await bcrypt.hash(createAdminAuthDto.password, 10);
       const created = await this.prisma.admins.create({
         data: {
           id: randomUUID(),
           username: createAdminAuthDto.username,
-          password: createAdminAuthDto.password,
+          password: hashedPassword,
         },
       });
 
@@ -86,7 +88,10 @@ export class AdminAuthService {
         where: { username: createAdminAuthDto.username },
       });
 
-      if (!admin || admin.password !== createAdminAuthDto.password) {
+      if (
+        !admin ||
+        !(await bcrypt.compare(createAdminAuthDto.password, admin.password))
+      ) {
         throw new UnauthorizedException('Invalid credentials');
       }
 
@@ -162,7 +167,7 @@ export class AdminAuthService {
             ? { username: updateAdminAuthDto.username }
             : {}),
           ...(updateAdminAuthDto.password !== undefined
-            ? { password: updateAdminAuthDto.password }
+            ? { password: await bcrypt.hash(updateAdminAuthDto.password, 10) }
             : {}),
         },
         select: {
