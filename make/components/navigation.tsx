@@ -27,8 +27,8 @@ const Navigation = () => {
   };
 
   return (
-    <nav className="flex items-center justify-between py-4 px-22 bg-white text-blue-900 font-semibold shadow-md ">
-      <h1 className="text-2xl font-bold mb-4 text-orange-500">
+    <nav className="flex items-center justify-between py-4 md:px-22 px-4 bg-white text-blue-900 font-semibold shadow-md ">
+      <h1 className="text-2xl font-bold mb-4 text-orange-500 hidden md:inline ">
         Byte<span className="text-blue-900">Forge</span>
       </h1>
       <div className=" flex items-center gap-10 text-xl ">
