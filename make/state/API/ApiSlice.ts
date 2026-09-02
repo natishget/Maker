@@ -210,7 +210,6 @@ export const getCompanyDataAsync = createAsyncThunk<
   "getCompanyDataAsync",
 
   async (_, { rejectWithValue, getState }) => {
-    console.log("Fetching company data...");
     try {
       const user = getState().api.user as
         | (User & { company_id?: string })
@@ -232,7 +231,6 @@ export const getCompanyDataAsync = createAsyncThunk<
           withCredentials: true,
         });
       }
-      console.log("Company data fetched:", response.data);
       return response.data;
     } catch (error: any) {
       console.log(

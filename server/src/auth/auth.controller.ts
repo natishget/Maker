@@ -96,6 +96,7 @@ export class AuthController {
       secure: process.env.IS_PRODUCTION === 'true',
       sameSite: process.env.IS_PRODUCTION === 'true' ? 'none' : 'lax',
       maxAge: 24 * 60 * 60 * 1000,
+      path: '/',
     });
 
     return { user };
@@ -110,7 +111,13 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Post('logout')
   logout(@Res({ passthrough: true }) res: Response) {
-    res.clearCookie('access_token');
+    console.log('access token...');
+    res.clearCookie('access_token', {
+      httpOnly: true,
+      secure: process.env.IS_PRODUCTION === 'true',
+      sameSite: process.env.IS_PRODUCTION === 'true' ? 'none' : 'lax',
+      path: '/',
+    });
     return { message: 'Logged out successfully' };
   }
 }
