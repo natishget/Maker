@@ -108,7 +108,6 @@ export class AuthController {
     return req.user;
   }
 
-  @UseGuards(JwtAuthGuard)
   @Post('logout')
   logout(@Res({ passthrough: true }) res: Response) {
     console.log('access token...');
