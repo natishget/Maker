@@ -18,6 +18,15 @@ const requiredNonNegativeNumber = (message: string) =>
       return Number.isFinite(numberValue) && numberValue >= 0;
     }, message);
 
+const requiredPositiveNumber = (message: string) =>
+  z
+    .string()
+    .min(1, message)
+    .refine((value) => {
+      const numberValue = Number(value);
+      return Number.isFinite(numberValue) && numberValue > 0;
+    }, message);
+
 const optionalNonNegativeNumber = (message: string) =>
   z.string().refine((value) => {
     if (value === "") {
@@ -141,4 +150,41 @@ export const createCompanySchema = z.object({
     .number()
     .min(12, "Telegram chat ID must be 12 numbers long")
     .max(12, "Telegram chat ID must be 12 numbers long"),
+});
+
+export const signageCalculatorSchema = z.object({
+  lightboxWidth: requiredPositiveNumber(
+    "Lightbox width is required and must be greater than 0",
+  ),
+  lightboxHeight: requiredPositiveNumber(
+    "Lightbox height is required and must be greater than 0",
+  ),
+  acpPrice: requiredNonNegativeNumber("ACP price is required"),
+  acrylicWidth: optionalNonNegativeNumber(
+    "Acrylic width must be a valid number",
+  ),
+  acrylicHeight: optionalNonNegativeNumber(
+    "Acrylic height must be a valid number",
+  ),
+  acrylicPrice: optionalNonNegativeNumber(
+    "Acrylic price must be a valid number",
+  ),
+  perimeter: optionalNonNegativeNumber("Perimeter must be a valid number"),
+  zekoloSize: optionalNonNegativeNumber(
+    "Letter Edge size must be a valid number",
+  ),
+  zekoloPrice: optionalNonNegativeNumber(
+    "Letter Edge price must be a valid number",
+  ),
+  powerSupplyCount: optionalNonNegativeNumber(
+    "Power supply count must be a valid number",
+  ),
+  powerSupplyPrice: optionalNonNegativeNumber(
+    "Power supply price must be a valid number",
+  ),
+  ledCount: optionalNonNegativeNumber("LED count must be a valid number"),
+  ledPrice: optionalNonNegativeNumber("LED price must be a valid number"),
+  rhsPrice: requiredNonNegativeNumber("Frame RHS price is required"),
+  customerName: z.string().optional(),
+  customerPhone: z.string().optional(),
 });

@@ -1,16 +1,8 @@
 "use client";
 
-import React, { useEffect } from "react";
-import redBigWave from "@/public/loginIcons/redBigWave.svg";
-import blueCircle from "@/public/loginIcons/blueCircle.svg";
-import bottomBlue from "@/public/loginIcons/bottomBlue.svg";
-import topBlue from "@/public/loginIcons/topBlue.svg";
-import lemonTwo from "@/public/loginIcons/lemonTwo.svg";
-import smallBlue from "@/public/loginIcons/smallBlue.svg";
-import Loading from "@/public/loginIcons/loading.png";
-
+import React from "react";
 import Image from "next/image";
-
+import Loading from "@/public/loginIcons/loading.png";
 import { loginUserSchema } from "@/lib/validationSchema";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -18,7 +10,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "@/state/store";
 import { loginAsync } from "@/state/API/ApiSlice";
-
 import { useRouter } from "next/navigation";
 
 type LoginFormData = z.infer<typeof loginUserSchema>;
@@ -47,99 +38,95 @@ const LoginForm = () => {
 
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
+    setError(null);
     try {
-      const response = await dispatch(loginAsync(data)).unwrap();
-      console.log("Login successful:", response);
+      await dispatch(loginAsync(data)).unwrap();
       router.push("/");
-    } catch (error: any) {
-      setError(error);
+    } catch (err: any) {
+      setError(err?.message || "Invalid credentials. Please try again.");
     } finally {
       setIsLoading(false);
     }
   };
+
   if (loading === false && !user) {
     return (
-      <div className="w-screen h-screen bg-gradient-to-br from-[rgb(15,12,41)] from-0% via-[rgb(48,43,99)] via-50% to-[rgb(36,36,62)] to-100% relative overflow-hidden">
-        <div className="absolute top-1/6 left-1/2 hidden md:block">
-          <Image src={redBigWave} alt="Red Big Wave" className="w-[600px]" />
-        </div>
-
-        <div className="absolute top-150 left-160 hidden md:block">
-          <Image src={blueCircle} alt="Blue Circle" className="w-[350px]" />
-        </div>
-
-        <div className="absolute -bottom-50 -left-50 overflow-hidden hidden md:block">
-          <Image
-            src={redBigWave}
-            alt="Red Big Wave"
-            className="w-[600px] opacity-50"
-          />
-        </div>
-
-        <div className="absolute top-0 left-100 overflow-hidden hidden md:block">
-          <Image src={topBlue} alt="Top Blue" className="" />
-        </div>
-
-        <div className="absolute bottom-0 right-0 hidden md:block">
-          <Image src={bottomBlue} alt="Bottom Blue" className="" />
-        </div>
-
-        <div className="absolute top-1/3 left-145 hidden md:block">
-          <Image src={lemonTwo} alt="Lemon Two" className="w-[250px]" />
-        </div>
-
-        <div className="absolute bottom-1/4 right-160 hidden md:block">
-          <Image src={smallBlue} alt="Small Blue" className="w-[200px]" />
-        </div>
-
-        <form
-          onSubmit={handleSubmit(onSubmit)}
-          className="text-white pt-10 pb-10 md:px-18 px-4 border-3 border-gray-300 rounded-4xl md:w-[550px] md:h-[550px] w-[90%] h-fit absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white/5 backdrop-blur-lg"
-        >
-          <h3 className="font-semibold text-xl mb-3">Maker</h3>
-          <h1 className="font-semibold text-3xl mb-5">Login</h1>
-          <div className="flex flex-col gap-1 mb-3">
-            <label htmlFor="email" className="">
-              Email
-            </label>
-            <input
-              type="email"
-              {...register("email")}
-              placeholder="username@gmail.com"
-              className="bg-white p-2 rounded-lg placeholder:text-gray-500 placeholder:italic text-gray-800"
-            />
-            <p className="text-red-500">{errors.email?.message}</p>
-          </div>
-          <div className="flex flex-col gap-1">
-            <label htmlFor="password">Password</label>
-            <input
-              type="password"
-              {...register("password")}
-              placeholder="********"
-              className="bg-white p-2 rounded-lg placeholder:text-gray-500 placeholder:italic text-gray-800"
-            />
-            <p className="text-red-500">{errors.password?.message}</p>
+      <div className="w-screen h-screen bg-slate-950 flex items-center justify-center p-4 text-slate-100 font-sans antialiased">
+        <div className="bg-slate-900 border border-slate-800 rounded-xl p-8 shadow-2xl w-full max-w-md space-y-6">
+          <div className="text-center space-y-2">
+            <h1 className="text-2xl font-bold tracking-tight text-white">
+              Byte<span className="text-blue-500">Forge</span>
+            </h1>
+            <p className="text-xs text-slate-400">
+              Sign in to access printing calculator & quotation tools
+            </p>
           </div>
 
-          <button className="text-xs">Forget password?</button>
-          <br />
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <div className="space-y-1">
+              <label
+                htmlFor="email"
+                className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 block"
+              >
+                Email Address
+              </label>
+              <input
+                id="email"
+                type="email"
+                {...register("email")}
+                placeholder="name@company.com"
+                className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3.5 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all"
+              />
+              {errors.email && (
+                <p className="text-xs text-rose-400 mt-1">
+                  {errors.email.message}
+                </p>
+              )}
+            </div>
 
-          <button className="w-full bg-red-800 py-2 mt-10 font-semibold flex items-center justify-center ">
-            {isLoading ? (
-              <Image src={Loading} alt="" className="animate-spin w-5 " />
-            ) : (
-              "Sign In"
+            <div className="space-y-1">
+              <label
+                htmlFor="password"
+                className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 block"
+              >
+                Password
+              </label>
+              <input
+                id="password"
+                type="password"
+                {...register("password")}
+                placeholder="••••••••"
+                className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3.5 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-all"
+              />
+              {errors.password && (
+                <p className="text-xs text-rose-400 mt-1">
+                  {errors.password.message}
+                </p>
+              )}
+            </div>
+
+            {error && (
+              <div className="p-3 bg-rose-950/40 border border-rose-900/50 rounded-lg text-xs text-rose-300 text-center">
+                {error}
+              </div>
             )}
-          </button>
-          <p className="text-red-500 text-center mt-2">{error}</p>
-        </form>
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm py-3 rounded-lg transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed mt-2"
+            >
+              {isLoading ? "Signing in..." : "Sign In"}
+            </button>
+          </form>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="w-screen h-screen flex items-center justify-center bg-gradient-to-br from-[rgb(15,12,41)] from-0% via-[rgb(48,43,99)] via-50% to-[rgb(36,36,62)] to-100%">
-      <Image src={Loading} alt="Loading" className="animate-spin w-10" />
+    <div className="w-screen h-screen flex items-center justify-center bg-slate-950">
+      <Image src={Loading} alt="Loading" className="animate-spin w-10 opacity-80" />
     </div>
   );
 };
